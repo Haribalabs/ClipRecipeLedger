@@ -582,3 +582,76 @@ contract ClipRecipeLedger {
     }
 
     function getCreatedTsForRange(uint256 low, uint256 high) external view returns (uint64[] memory ts) {
+        if (low == 0) low = 1;
+        if (high > recipeCounter) high = recipeCounter;
+        if (low > high) return new uint64[](0);
+        uint256 len = high - low + 1;
+        if (len > MAX_BULK) len = MAX_BULK;
+        ts = new uint64[](len);
+        for (uint256 i = 0; i < len; i++) ts[i] = recipes[low + i].createdTs;
+    }
+
+    function getModifiedTsForRange(uint256 low, uint256 high) external view returns (uint64[] memory ts) {
+        if (low == 0) low = 1;
+        if (high > recipeCounter) high = recipeCounter;
+        if (low > high) return new uint64[](0);
+        uint256 len = high - low + 1;
+        if (len > MAX_BULK) len = MAX_BULK;
+        ts = new uint64[](len);
+        for (uint256 i = 0; i < len; i++) ts[i] = recipes[low + i].modifiedTs;
+    }
+
+    function getSummariesForIds(uint256[] calldata ids) external view returns (RecipeSummary[] memory result) {
+        result = new RecipeSummary[](ids.length);
+        for (uint256 i = 0; i < ids.length; i++) {
+            uint256 id = ids[i];
+            if (recipes[id].recipeId == 0) continue;
+            RecipeData storage r = recipes[id];
+            result[i] = RecipeSummary({
+                recipeId: r.recipeId,
+                author: r.author,
+                title: r.title,
+                durationSec: r.durationSec,
+                chuckleLevel: r.chuckleLevel,
+                status: r.status,
+                createdTs: r.createdTs
+            });
+        }
+    }
+
+    function isController(address account) external view returns (bool) { return account == CONTROLLER; }
+    function isModerator(address account) external view returns (bool) { return account == MODERATOR; }
+    function isPipeline(address account) external view returns (bool) { return account == PIPELINE; }
+    function isFeeRecipient(address account) external view returns (bool) { return account == FEE_RECIPIENT; }
+
+    function getRolesArray() external view returns (address[4] memory roles) {
+        roles[0] = CONTROLLER;
+        roles[1] = MODERATOR;
+        roles[2] = PIPELINE;
+        roles[3] = FEE_RECIPIENT;
+    }
+
+    function statusIsDraft(uint256 recipeId) external view returns (bool) { return recipes[recipeId].status == RecipeStatus.Draft; }
+    function statusIsLive(uint256 recipeId) external view returns (bool) { return recipes[recipeId].status == RecipeStatus.Live; }
+    function statusIsInPoll(uint256 recipeId) external view returns (bool) { return recipes[recipeId].status == RecipeStatus.InPoll; }
+    function statusIsRetired(uint256 recipeId) external view returns (bool) { return recipes[recipeId].status == RecipeStatus.Retired; }
+    function statusIsEmpty(uint256 recipeId) external view returns (bool) { return recipes[recipeId].status == RecipeStatus.Empty; }
+
+    function packHashesForRecipes(uint256[] calldata ids) external view returns (bytes32[][] memory out) {
+        out = new bytes32[][](ids.length);
+        for (uint256 i = 0; i < ids.length; i++) out[i] = _packHashes[ids[i]];
+    }
+
+    function collabListsForRecipes(uint256[] calldata ids) external view returns (address[][] memory out) {
+        out = new address[][](ids.length);
+        for (uint256 i = 0; i < ids.length; i++) out[i] = _collabList[ids[i]];
+    }
+
+    function packLengthsForRecipes(uint256[] calldata ids) external view returns (uint256[] memory lens) {
+        lens = new uint256[](ids.length);
+        for (uint256 i = 0; i < ids.length; i++) lens[i] = _packHashes[ids[i]].length;
+    }
+
+    function collabLengthsForRecipes(uint256[] calldata ids) external view returns (uint256[] memory lens) {
+        lens = new uint256[](ids.length);
+        for (uint256 i = 0; i < ids.length; i++) lens[i] = _collabList[ids[i]].length;
