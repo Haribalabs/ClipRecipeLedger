@@ -436,3 +436,76 @@ contract ClipRecipeLedger {
     function getPipeline() external view returns (address) { return PIPELINE; }
     function getFeeRecipient() external view returns (address) { return FEE_RECIPIENT; }
     function getLaunchTs() external view returns (uint256) { return LAUNCH_TS; }
+    function isStopped() external view returns (bool) { return stopped; }
+    function getRecipeCounter() external view returns (uint256) { return recipeCounter; }
+
+    function getRecipeDataFull(uint256 recipeId) external view returns (
+        uint256 id,
+        address authorAddr,
+        string memory titleStr,
+        bytes32 packH,
+        bytes32 timelineH,
+        uint32 durSec,
+        uint32 chuckle,
+        uint32 mixS,
+        uint64 createdT,
+        uint64 modifiedT,
+        RecipeStatus st
+    ) {
+        if (recipes[recipeId].recipeId == 0) revert CRL_NotFound();
+        RecipeData storage r = recipes[recipeId];
+        return (
+            r.recipeId,
+            r.author,
+            r.title,
+            r.packHash,
+            r.timelineHash,
+            r.durationSec,
+            r.chuckleLevel,
+            r.mixSeed,
+            r.createdTs,
+            r.modifiedTs,
+            r.status
+        );
+    }
+
+    function getStatusName(RecipeStatus status) external pure returns (string memory) {
+        if (status == RecipeStatus.Empty) return "Empty";
+        if (status == RecipeStatus.Draft) return "Draft";
+        if (status == RecipeStatus.Live) return "Live";
+        if (status == RecipeStatus.InPoll) return "InPoll";
+        if (status == RecipeStatus.Retired) return "Retired";
+        return "Unknown";
+    }
+
+    function getStatusForRecipe(uint256 recipeId) external view returns (RecipeStatus) {
+        if (recipes[recipeId].recipeId == 0) revert CRL_NotFound();
+        return recipes[recipeId].status;
+    }
+
+    function remainingRecipeSlots() external view returns (uint256) {
+        if (recipeCounter >= MAX_RECIPES_CAP) return 0;
+        return MAX_RECIPES_CAP - recipeCounter;
+    }
+
+    function maxRecipesCap() external pure returns (uint256) { return MAX_RECIPES_CAP; }
+    function maxPackEntries() external pure returns (uint256) { return MAX_PACK_ENTRIES; }
+    function maxDurationSec() external pure returns (uint256) { return MAX_DURATION_SEC; }
+    function maxTitleLen() external pure returns (uint256) { return MAX_TITLE_LEN; }
+    function maxCollaborators() external pure returns (uint256) { return MAX_COLLABORATORS; }
+    function pollDuration() external pure returns (uint256) { return POLL_DURATION; }
+    function quorumBp() external pure returns (uint256) { return QUORUM_BP; }
+    function bps() external pure returns (uint256) { return BPS; }
+    function appNamespace() external pure returns (bytes32) { return APP_NAMESPACE; }
+    function seedMagic() external pure returns (bytes32) { return SEED_MAGIC; }
+    function buildTag() external pure returns (bytes32) { return BUILD_TAG; }
+    function maxBulk() external pure returns (uint256) { return MAX_BULK; }
+
+    function getRecipeIdsInRange(uint256 low, uint256 high) external view returns (uint256[] memory ids) {
+        if (low == 0) low = 1;
+        if (high > recipeCounter) high = recipeCounter;
+        if (low > high) return new uint256[](0);
+        uint256 len = high - low + 1;
+        if (len > MAX_BULK) len = MAX_BULK;
+        ids = new uint256[](len);
+        for (uint256 i = 0; i < len; i++) ids[i] = low + i;
