@@ -290,3 +290,76 @@ contract ClipRecipeLedger {
                 chuckleLevel: r.chuckleLevel,
                 status: r.status,
                 createdTs: r.createdTs
+            });
+        }
+    }
+
+    function getRecipesInStatus(RecipeStatus status, uint256 fromId, uint256 count) external view returns (uint256[] memory ids) {
+        if (count > MAX_BULK) count = MAX_BULK;
+        uint256[] memory temp = new uint256[](count);
+        uint256 found = 0;
+        uint256 start = fromId == 0 ? 1 : fromId;
+        for (uint256 id = start; id <= recipeCounter && found < count; id++) {
+            if (recipes[id].status == status) {
+                temp[found] = id;
+                found++;
+            }
+        }
+        ids = new uint256[](found);
+        for (uint256 i = 0; i < found; i++) ids[i] = temp[i];
+    }
+
+    function countByStatus(RecipeStatus status) external view returns (uint256) {
+        uint256 n = 0;
+        for (uint256 id = 1; id <= recipeCounter; id++) {
+            if (recipes[id].status == status) n++;
+        }
+        return n;
+    }
+
+    function getAuthorRecipeCount(address author) external view returns (uint256) {
+        return _authoredIds[author].length;
+    }
+
+    function getAuthorRecipesPaginated(address author, uint256 offset, uint256 limit) external view returns (uint256[] memory ids) {
+        uint256[] storage arr = _authoredIds[author];
+        if (offset >= arr.length) return new uint256[](0);
+        uint256 end = offset + limit;
+        if (end > arr.length) end = arr.length;
+        uint256 len = end - offset;
+        ids = new uint256[](len);
+        for (uint256 i = 0; i < len; i++) ids[i] = arr[offset + i];
+    }
+
+    function getRecipeTitle(uint256 recipeId) external view returns (string memory) {
+        if (recipes[recipeId].recipeId == 0) revert CRL_NotFound();
+        return recipes[recipeId].title;
+    }
+
+    function getRecipeAuthor(uint256 recipeId) external view returns (address) {
+        if (recipes[recipeId].recipeId == 0) revert CRL_NotFound();
+        return recipes[recipeId].author;
+    }
+
+    function getRecipePackHash(uint256 recipeId) external view returns (bytes32) {
+        if (recipes[recipeId].recipeId == 0) revert CRL_NotFound();
+        return recipes[recipeId].packHash;
+    }
+
+    function getRecipeTimelineHash(uint256 recipeId) external view returns (bytes32) {
+        if (recipes[recipeId].recipeId == 0) revert CRL_NotFound();
+        return recipes[recipeId].timelineHash;
+    }
+
+    function getRecipeDuration(uint256 recipeId) external view returns (uint32) {
+        if (recipes[recipeId].recipeId == 0) revert CRL_NotFound();
+        return recipes[recipeId].durationSec;
+    }
+
+    function getRecipeChuckleLevel(uint256 recipeId) external view returns (uint32) {
+        if (recipes[recipeId].recipeId == 0) revert CRL_NotFound();
+        return recipes[recipeId].chuckleLevel;
+    }
+
+    function getRecipeMixSeed(uint256 recipeId) external view returns (uint32) {
+        if (recipes[recipeId].recipeId == 0) revert CRL_NotFound();
