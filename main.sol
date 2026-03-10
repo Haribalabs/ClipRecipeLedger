@@ -874,3 +874,76 @@ contract ClipRecipeLedger {
         uint256 len = end - start;
         ids = new uint256[](len);
         for (uint256 i = 0; i < len; i++) ids[i] = arr[start + i];
+    }
+
+    function roleCheck(address account) external view returns (bool ctrl, bool mod, bool pipe, bool fee) {
+        ctrl = (account == CONTROLLER);
+        mod = (account == MODERATOR);
+        pipe = (account == PIPELINE);
+        fee = (account == FEE_RECIPIENT);
+    }
+
+    function constantsPack1() external pure returns (uint256 a, uint256 b, uint256 c, uint256 d) {
+        return (MAX_PACK_ENTRIES, MAX_DURATION_SEC, MAX_TITLE_LEN, MAX_RECIPES_CAP);
+    }
+
+    function constantsPack2() external pure returns (uint256 a, uint256 b, uint256 c, uint256 d) {
+        return (MAX_COLLABORATORS, POLL_DURATION, QUORUM_BP, BPS);
+    }
+
+    function constantsPack3() external pure returns (bytes32 ns, bytes32 seed, bytes32 tag) {
+        return (APP_NAMESPACE, SEED_MAGIC, BUILD_TAG);
+    }
+
+    function safeRecipeIdRange() external view returns (uint256 minId, uint256 maxId) {
+        minId = 1;
+        maxId = recipeCounter;
+    }
+
+    function recipeStatusIsDraft(uint256 recipeId) external view returns (bool) {
+        return recipes[recipeId].status == RecipeStatus.Draft;
+    }
+
+    function recipeStatusIsLive(uint256 recipeId) external view returns (bool) {
+        return recipes[recipeId].status == RecipeStatus.Live;
+    }
+
+    function recipeStatusIsInPoll(uint256 recipeId) external view returns (bool) {
+        return recipes[recipeId].status == RecipeStatus.InPoll;
+    }
+
+    function recipeStatusIsRetired(uint256 recipeId) external view returns (bool) {
+        return recipes[recipeId].status == RecipeStatus.Retired;
+    }
+
+    function pollIsOpen(uint256 recipeId) external view returns (bool) {
+        PollData storage p = polls[recipeId];
+        return p.openedTs != 0 && !p.closed;
+    }
+
+    function pollIsClosed(uint256 recipeId) external view returns (bool) {
+        return polls[recipeId].closed;
+    }
+
+    function pollIsApproved(uint256 recipeId) external view returns (bool) {
+        return polls[recipeId].approved;
+    }
+
+    function totalVotesForPoll(uint256 recipeId) external view returns (uint256) {
+        PollData storage p = polls[recipeId];
+        return uint256(p.approveVotes) + uint256(p.rejectVotes);
+    }
+
+    function quorumReached(uint256 recipeId) external view returns (bool) {
+        PollData storage p = polls[recipeId];
+        if (p.closed || p.openedTs == 0) return false;
+        uint256 total = uint256(p.approveVotes) + uint256(p.rejectVotes);
+        if (total == 0) return false;
+        uint256 bp = (uint256(p.approveVotes) * BPS) / total;
+        return bp >= QUORUM_BP;
+    }
+
+    function estimateQuorumFor(uint32 approveV, uint32 rejectV) external pure returns (uint256 bp) {
+        uint256 total = uint256(approveV) + uint256(rejectV);
+        if (total == 0) return 0;
+        return (uint256(approveV) * BPS) / total;
