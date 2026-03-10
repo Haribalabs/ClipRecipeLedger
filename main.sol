@@ -509,3 +509,76 @@ contract ClipRecipeLedger {
         if (len > MAX_BULK) len = MAX_BULK;
         ids = new uint256[](len);
         for (uint256 i = 0; i < len; i++) ids[i] = low + i;
+    }
+
+    function getTitlesForRange(uint256 low, uint256 high) external view returns (string[] memory titles) {
+        if (low == 0) low = 1;
+        if (high > recipeCounter) high = recipeCounter;
+        if (low > high) return new string[](0);
+        uint256 len = high - low + 1;
+        if (len > MAX_BULK) len = MAX_BULK;
+        titles = new string[](len);
+        for (uint256 i = 0; i < len; i++) titles[i] = recipes[low + i].title;
+    }
+
+    function getAuthorsForRange(uint256 low, uint256 high) external view returns (address[] memory authors) {
+        if (low == 0) low = 1;
+        if (high > recipeCounter) high = recipeCounter;
+        if (low > high) return new address[](0);
+        uint256 len = high - low + 1;
+        if (len > MAX_BULK) len = MAX_BULK;
+        authors = new address[](len);
+        for (uint256 i = 0; i < len; i++) authors[i] = recipes[low + i].author;
+    }
+
+    function getPackHashesForRange(uint256 low, uint256 high) external view returns (bytes32[] memory hashes) {
+        if (low == 0) low = 1;
+        if (high > recipeCounter) high = recipeCounter;
+        if (low > high) return new bytes32[](0);
+        uint256 len = high - low + 1;
+        if (len > MAX_BULK) len = MAX_BULK;
+        hashes = new bytes32[](len);
+        for (uint256 i = 0; i < len; i++) hashes[i] = recipes[low + i].packHash;
+    }
+
+    function getTimelineHashesForRange(uint256 low, uint256 high) external view returns (bytes32[] memory hashes) {
+        if (low == 0) low = 1;
+        if (high > recipeCounter) high = recipeCounter;
+        if (low > high) return new bytes32[](0);
+        uint256 len = high - low + 1;
+        if (len > MAX_BULK) len = MAX_BULK;
+        hashes = new bytes32[](len);
+        for (uint256 i = 0; i < len; i++) hashes[i] = recipes[low + i].timelineHash;
+    }
+
+    function getDurationsForRange(uint256 low, uint256 high) external view returns (uint32[] memory durs) {
+        if (low == 0) low = 1;
+        if (high > recipeCounter) high = recipeCounter;
+        if (low > high) return new uint32[](0);
+        uint256 len = high - low + 1;
+        if (len > MAX_BULK) len = MAX_BULK;
+        durs = new uint32[](len);
+        for (uint256 i = 0; i < len; i++) durs[i] = recipes[low + i].durationSec;
+    }
+
+    function getChuckleLevelsForRange(uint256 low, uint256 high) external view returns (uint32[] memory levels) {
+        if (low == 0) low = 1;
+        if (high > recipeCounter) high = recipeCounter;
+        if (low > high) return new uint32[](0);
+        uint256 len = high - low + 1;
+        if (len > MAX_BULK) len = MAX_BULK;
+        levels = new uint32[](len);
+        for (uint256 i = 0; i < len; i++) levels[i] = recipes[low + i].chuckleLevel;
+    }
+
+    function getStatusesForRange(uint256 low, uint256 high) external view returns (uint8[] memory statuses) {
+        if (low == 0) low = 1;
+        if (high > recipeCounter) high = recipeCounter;
+        if (low > high) return new uint8[](0);
+        uint256 len = high - low + 1;
+        if (len > MAX_BULK) len = MAX_BULK;
+        statuses = new uint8[](len);
+        for (uint256 i = 0; i < len; i++) statuses[i] = uint8(recipes[low + i].status);
+    }
+
+    function getCreatedTsForRange(uint256 low, uint256 high) external view returns (uint64[] memory ts) {
