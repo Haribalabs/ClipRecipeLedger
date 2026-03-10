@@ -1020,3 +1020,76 @@ contract ClipRecipeLedger {
     function pollById(uint256 recipeId) external view returns (PollData memory) {
         return polls[recipeId];
     }
+
+    function summaryById(uint256 recipeId) external view returns (RecipeSummary memory) {
+        if (recipes[recipeId].recipeId == 0) revert CRL_NotFound();
+        RecipeData storage r = recipes[recipeId];
+        return RecipeSummary({
+            recipeId: r.recipeId,
+            author: r.author,
+            title: r.title,
+            durationSec: r.durationSec,
+            chuckleLevel: r.chuckleLevel,
+            status: r.status,
+            createdTs: r.createdTs
+        });
+    }
+
+    function allConfig() external pure returns (
+        uint256 packEntries,
+        uint256 durationSec,
+        uint256 titleLen,
+        uint256 recipesCap,
+        uint256 collaborators,
+        uint256 pollDur,
+        uint256 quorumBpVal,
+        uint256 bpsVal
+    ) {
+        return (
+            MAX_PACK_ENTRIES,
+            MAX_DURATION_SEC,
+            MAX_TITLE_LEN,
+            MAX_RECIPES_CAP,
+            MAX_COLLABORATORS,
+            POLL_DURATION,
+            QUORUM_BP,
+            BPS
+        );
+    }
+
+    function allRolesView() external view returns (
+        address controllerAddr,
+        address moderatorAddr,
+        address pipelineAddr,
+        address feeRecipientAddr
+    ) {
+        return (CONTROLLER, MODERATOR, PIPELINE, FEE_RECIPIENT);
+    }
+
+    function supportsInterface(bytes4) external pure returns (bool) {
+        return false;
+    }
+
+    function protocolName() external pure returns (string memory) {
+        return "ClipRecipeLedger";
+    }
+
+    function protocolVersion() external pure returns (uint256) {
+        return 1;
+    }
+
+    function protocolNamespace() external pure returns (bytes32) {
+        return APP_NAMESPACE;
+    }
+
+    function protocolBuildTag() external pure returns (bytes32) {
+        return BUILD_TAG;
+    }
+
+    function getNextId() external view returns (uint256) {
+        return recipeCounter + 1;
+    }
+
+    function canCreateRecipe() external view returns (bool) {
+        return !stopped && recipeCounter < MAX_RECIPES_CAP;
+    }
