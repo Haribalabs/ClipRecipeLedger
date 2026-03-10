@@ -217,3 +217,76 @@ contract ClipRecipeLedger {
     }
 
     function getCollaborators(uint256 recipeId) external view returns (address[] memory) {
+        if (recipes[recipeId].recipeId == 0) revert CRL_NotFound();
+        return _collabList[recipeId];
+    }
+
+    function getAuthoredIds(address author) external view returns (uint256[] memory) {
+        return _authoredIds[author];
+    }
+
+    function getPoll(uint256 recipeId) external view returns (PollData memory) {
+        return polls[recipeId];
+    }
+
+    function estimateQuorumBp(uint32 approveVotes, uint32 rejectVotes) external pure returns (uint256) {
+        uint256 total = uint256(approveVotes) + uint256(rejectVotes);
+        if (total == 0) return 0;
+        return (uint256(approveVotes) * BPS) / total;
+    }
+
+    function getRoles() external view returns (address, address, address, address) {
+        return (CONTROLLER, MODERATOR, PIPELINE, FEE_RECIPIENT);
+    }
+
+    function getConfig() external pure returns (uint256, uint256, uint256, uint256, uint256, uint256, uint256, bytes32) {
+        return (MAX_PACK_ENTRIES, MAX_DURATION_SEC, MAX_TITLE_LEN, MAX_RECIPES_CAP, MAX_COLLABORATORS, POLL_DURATION, QUORUM_BP, APP_NAMESPACE);
+    }
+
+    uint256 public constant MAX_BULK = 80;
+    uint256 public constant MIN_CHUCKLE = 0;
+    uint256 public constant MAX_CHUCKLE = 9999;
+    bytes32 public constant BUILD_TAG = keccak256("ClipRecipeLedger.0x_GenV_99.build.1");
+
+    struct RecipeSummary {
+        uint256 recipeId;
+        address author;
+        string title;
+        uint32 durationSec;
+        uint32 chuckleLevel;
+        RecipeStatus status;
+        uint64 createdTs;
+    }
+
+    function getRecipeSummary(uint256 recipeId) external view returns (RecipeSummary memory) {
+        if (recipes[recipeId].recipeId == 0) revert CRL_NotFound();
+        RecipeData storage r = recipes[recipeId];
+        return RecipeSummary({
+            recipeId: r.recipeId,
+            author: r.author,
+            title: r.title,
+            durationSec: r.durationSec,
+            chuckleLevel: r.chuckleLevel,
+            status: r.status,
+            createdTs: r.createdTs
+        });
+    }
+
+    function getSummaries(uint256 fromId, uint256 count) external view returns (RecipeSummary[] memory result) {
+        if (count == 0 || count > MAX_BULK) revert CRL_InvalidInput();
+        uint256 end = fromId + count;
+        if (end > recipeCounter + 1) end = recipeCounter + 1;
+        uint256 len = end > fromId ? end - fromId : 0;
+        result = new RecipeSummary[](len);
+        for (uint256 i = 0; i < len; i++) {
+            uint256 id = fromId + i;
+            RecipeData storage r = recipes[id];
+            if (r.recipeId == 0) continue;
+            result[i] = RecipeSummary({
+                recipeId: r.recipeId,
+                author: r.author,
+                title: r.title,
+                durationSec: r.durationSec,
+                chuckleLevel: r.chuckleLevel,
+                status: r.status,
+                createdTs: r.createdTs
