@@ -947,3 +947,76 @@ contract ClipRecipeLedger {
         uint256 total = uint256(approveV) + uint256(rejectV);
         if (total == 0) return 0;
         return (uint256(approveV) * BPS) / total;
+    }
+
+    function isCollaborator(uint256 recipeId, address account) external view returns (bool) {
+        address[] storage arr = _collabList[recipeId];
+        for (uint256 i = 0; i < arr.length; i++) {
+            if (arr[i] == account) return true;
+        }
+        return false;
+    }
+
+    function collaboratorCount(uint256 recipeId) external view returns (uint256) {
+        return _collabList[recipeId].length;
+    }
+
+    function packEntryCount(uint256 recipeId) external view returns (uint256) {
+        return _packHashes[recipeId].length;
+    }
+
+    function recipeCount() external view returns (uint256) {
+        return recipeCounter;
+    }
+
+    function launchTimestamp() external view returns (uint256) {
+        return LAUNCH_TS;
+    }
+
+    function mutexValue() external pure returns (uint256) {
+        return MUTEX;
+    }
+
+    function namespace() external pure returns (bytes32) {
+        return APP_NAMESPACE;
+    }
+
+    function seedMagicConstant() external pure returns (bytes32) {
+        return SEED_MAGIC;
+    }
+
+    function buildTagConstant() external pure returns (bytes32) {
+        return BUILD_TAG;
+    }
+
+    function maxBulkQuery() external pure returns (uint256) {
+        return MAX_BULK;
+    }
+
+    function getRecipeFull(uint256 recipeId) external view returns (RecipeData memory) {
+        if (recipes[recipeId].recipeId == 0) revert CRL_NotFound();
+        return recipes[recipeId];
+    }
+
+    function getPackHashesFull(uint256 recipeId) external view returns (bytes32[] memory) {
+        if (recipes[recipeId].recipeId == 0) revert CRL_NotFound();
+        return _packHashes[recipeId];
+    }
+
+    function getCollaboratorsFull(uint256 recipeId) external view returns (address[] memory) {
+        if (recipes[recipeId].recipeId == 0) revert CRL_NotFound();
+        return _collabList[recipeId];
+    }
+
+    function getPollFull(uint256 recipeId) external view returns (PollData memory) {
+        return polls[recipeId];
+    }
+
+    function recipeById(uint256 recipeId) external view returns (RecipeData memory) {
+        if (recipes[recipeId].recipeId == 0) revert CRL_NotFound();
+        return recipes[recipeId];
+    }
+
+    function pollById(uint256 recipeId) external view returns (PollData memory) {
+        return polls[recipeId];
+    }
