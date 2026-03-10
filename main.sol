@@ -801,3 +801,76 @@ contract ClipRecipeLedger {
         for (uint256 i = 0; i < indices.length; i++) {
             if (indices[i] < arr.length) out[i] = arr[indices[i]];
         }
+    }
+
+    function getCollabBatch(uint256 recipeId, uint256[] calldata indices) external view returns (address[] memory out) {
+        if (recipes[recipeId].recipeId == 0) revert CRL_NotFound();
+        address[] storage arr = _collabList[recipeId];
+        out = new address[](indices.length);
+        for (uint256 i = 0; i < indices.length; i++) {
+            if (indices[i] < arr.length) out[i] = arr[indices[i]];
+        }
+    }
+
+    function titlesForRecipes(uint256[] calldata ids) external view returns (string[] memory titles) {
+        titles = new string[](ids.length);
+        for (uint256 i = 0; i < ids.length; i++) titles[i] = recipes[ids[i]].title;
+    }
+
+    function authorsForRecipes(uint256[] calldata ids) external view returns (address[] memory authors) {
+        authors = new address[](ids.length);
+        for (uint256 i = 0; i < ids.length; i++) authors[i] = recipes[ids[i]].author;
+    }
+
+    function packHashesForRecipesFlat(uint256[] calldata ids) external view returns (bytes32[] memory hashes) {
+        hashes = new bytes32[](ids.length);
+        for (uint256 i = 0; i < ids.length; i++) hashes[i] = recipes[ids[i]].packHash;
+    }
+
+    function timelineHashesForRecipes(uint256[] calldata ids) external view returns (bytes32[] memory hashes) {
+        hashes = new bytes32[](ids.length);
+        for (uint256 i = 0; i < ids.length; i++) hashes[i] = recipes[ids[i]].timelineHash;
+    }
+
+    function durationsForRecipes(uint256[] calldata ids) external view returns (uint32[] memory durs) {
+        durs = new uint32[](ids.length);
+        for (uint256 i = 0; i < ids.length; i++) durs[i] = recipes[ids[i]].durationSec;
+    }
+
+    function chuckleLevelsForRecipes(uint256[] calldata ids) external view returns (uint32[] memory levels) {
+        levels = new uint32[](ids.length);
+        for (uint256 i = 0; i < ids.length; i++) levels[i] = recipes[ids[i]].chuckleLevel;
+    }
+
+    function mixSeedsForRecipes(uint256[] calldata ids) external view returns (uint32[] memory seeds) {
+        seeds = new uint32[](ids.length);
+        for (uint256 i = 0; i < ids.length; i++) seeds[i] = recipes[ids[i]].mixSeed;
+    }
+
+    function createdTsForRecipes(uint256[] calldata ids) external view returns (uint64[] memory ts) {
+        ts = new uint64[](ids.length);
+        for (uint256 i = 0; i < ids.length; i++) ts[i] = recipes[ids[i]].createdTs;
+    }
+
+    function modifiedTsForRecipes(uint256[] calldata ids) external view returns (uint64[] memory ts) {
+        ts = new uint64[](ids.length);
+        for (uint256 i = 0; i < ids.length; i++) ts[i] = recipes[ids[i]].modifiedTs;
+    }
+
+    function statusesForRecipes(uint256[] calldata ids) external view returns (uint8[] memory statuses) {
+        statuses = new uint8[](ids.length);
+        for (uint256 i = 0; i < ids.length; i++) statuses[i] = uint8(recipes[ids[i]].status);
+    }
+
+    function getAuthoredIdsAll(address author) external view returns (uint256[] memory) {
+        return _authoredIds[author];
+    }
+
+    function getAuthoredSlice(address author, uint256 start, uint256 length) external view returns (uint256[] memory ids) {
+        uint256[] storage arr = _authoredIds[author];
+        if (start >= arr.length) return new uint256[](0);
+        uint256 end = start + length;
+        if (end > arr.length) end = arr.length;
+        uint256 len = end - start;
+        ids = new uint256[](len);
+        for (uint256 i = 0; i < len; i++) ids[i] = arr[start + i];
