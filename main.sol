@@ -144,3 +144,76 @@ contract ClipRecipeLedger {
         if (r.recipeId == 0) revert CRL_NotFound();
         if (msg.sender != r.author && msg.sender != PIPELINE) revert CRL_Unauthorized();
         if (r.status == RecipeStatus.Retired) revert CRL_InvalidState();
+        if (newTimelineHash == bytes32(0)) revert CRL_InvalidInput();
+        r.timelineHash = newTimelineHash;
+        r.chuckleLevel = newChuckleLevel;
+        r.modifiedTs = uint64(block.timestamp);
+        emit RecipeEdited(recipeId, newTimelineHash, uint64(block.timestamp));
+    }
+
+    function setStatus(uint256 recipeId, RecipeStatus newStatus) external whenRunning {
+        RecipeData storage r = recipes[recipeId];
+        if (r.recipeId == 0) revert CRL_NotFound();
+        if (msg.sender != CONTROLLER && msg.sender != MODERATOR && msg.sender != r.author) revert CRL_Unauthorized();
+        RecipeStatus oldStatus = r.status;
+        r.status = newStatus;
+        r.modifiedTs = uint64(block.timestamp);
+        emit StatusChanged(recipeId, oldStatus, newStatus, uint64(block.timestamp));
+    }
+
+    function openPoll(uint256 recipeId) external onlyModerator whenRunning {
+        RecipeData storage r = recipes[recipeId];
+        if (r.recipeId == 0) revert CRL_NotFound();
+        if (r.status != RecipeStatus.Live && r.status != RecipeStatus.Draft) revert CRL_InvalidState();
+        PollData storage p = polls[recipeId];
+        if (!p.closed && p.openedTs != 0) revert CRL_Already();
+        r.status = RecipeStatus.InPoll;
+        r.modifiedTs = uint64(block.timestamp);
+        polls[recipeId] = PollData({ openedTs: uint64(block.timestamp), approveVotes: 0, rejectVotes: 0, closed: false, approved: false });
+        emit PollStarted(recipeId, uint64(block.timestamp));
+    }
+
+    function castVote(uint256 recipeId, bool approve) external whenRunning {
+        RecipeData storage r = recipes[recipeId];
+        if (r.recipeId == 0) revert CRL_NotFound();
+        if (r.status != RecipeStatus.InPoll) revert CRL_InvalidState();
+        PollData storage p = polls[recipeId];
+        if (p.closed || p.openedTs == 0) revert CRL_InvalidState();
+        if (hasVoted[recipeId][msg.sender]) revert CRL_Already();
+        hasVoted[recipeId][msg.sender] = true;
+        if (approve) p.approveVotes += 1; else p.rejectVotes += 1;
+        emit VoteCast(recipeId, msg.sender, approve, uint64(block.timestamp));
+    }
+
+    function closePoll(uint256 recipeId) external whenRunning {
+        RecipeData storage r = recipes[recipeId];
+        if (r.recipeId == 0) revert CRL_NotFound();
+        if (r.status != RecipeStatus.InPoll) revert CRL_InvalidState();
+        PollData storage p = polls[recipeId];
+        if (p.closed || p.openedTs == 0) revert CRL_InvalidState();
+        if (block.timestamp < uint256(p.openedTs) + POLL_DURATION) revert CRL_InvalidState();
+        p.closed = true;
+        uint256 total = uint256(p.approveVotes) + uint256(p.rejectVotes);
+        uint256 quorumBp = total == 0 ? 0 : (uint256(p.approveVotes) * BPS) / total;
+        p.approved = quorumBp >= QUORUM_BP;
+        r.status = p.approved ? RecipeStatus.Live : RecipeStatus.Retired;
+        r.modifiedTs = uint64(block.timestamp);
+        emit PollClosed(recipeId, p.approved, p.approveVotes, p.rejectVotes, uint64(block.timestamp));
+    }
+
+    function setStopped(bool stop) external onlyController {
+        stopped = stop;
+        emit StoppedSet(stopped, uint64(block.timestamp));
+    }
+
+    function getRecipe(uint256 recipeId) external view returns (RecipeData memory) {
+        if (recipes[recipeId].recipeId == 0) revert CRL_NotFound();
+        return recipes[recipeId];
+    }
+
+    function getPackHashes(uint256 recipeId) external view returns (bytes32[] memory) {
+        if (recipes[recipeId].recipeId == 0) revert CRL_NotFound();
+        return _packHashes[recipeId];
+    }
+
+    function getCollaborators(uint256 recipeId) external view returns (address[] memory) {
