@@ -363,3 +363,76 @@ contract ClipRecipeLedger {
 
     function getRecipeMixSeed(uint256 recipeId) external view returns (uint32) {
         if (recipes[recipeId].recipeId == 0) revert CRL_NotFound();
+        return recipes[recipeId].mixSeed;
+    }
+
+    function getRecipeCreatedTs(uint256 recipeId) external view returns (uint64) {
+        if (recipes[recipeId].recipeId == 0) revert CRL_NotFound();
+        return recipes[recipeId].createdTs;
+    }
+
+    function getRecipeModifiedTs(uint256 recipeId) external view returns (uint64) {
+        if (recipes[recipeId].recipeId == 0) revert CRL_NotFound();
+        return recipes[recipeId].modifiedTs;
+    }
+
+    function getRecipeStatus(uint256 recipeId) external view returns (RecipeStatus) {
+        if (recipes[recipeId].recipeId == 0) revert CRL_NotFound();
+        return recipes[recipeId].status;
+    }
+
+    function getPackEntryAt(uint256 recipeId, uint256 index) external view returns (bytes32) {
+        if (recipes[recipeId].recipeId == 0) revert CRL_NotFound();
+        bytes32[] storage arr = _packHashes[recipeId];
+        if (index >= arr.length) revert CRL_InvalidInput();
+        return arr[index];
+    }
+
+    function getPackLength(uint256 recipeId) external view returns (uint256) {
+        return _packHashes[recipeId].length;
+    }
+
+    function getCollabAt(uint256 recipeId, uint256 index) external view returns (address) {
+        if (recipes[recipeId].recipeId == 0) revert CRL_NotFound();
+        address[] storage arr = _collabList[recipeId];
+        if (index >= arr.length) revert CRL_InvalidInput();
+        return arr[index];
+    }
+
+    function getCollabLength(uint256 recipeId) external view returns (uint256) {
+        return _collabList[recipeId].length;
+    }
+
+    function getPollOpenedTs(uint256 recipeId) external view returns (uint64) {
+        return polls[recipeId].openedTs;
+    }
+
+    function getPollApproveVotes(uint256 recipeId) external view returns (uint32) {
+        return polls[recipeId].approveVotes;
+    }
+
+    function getPollRejectVotes(uint256 recipeId) external view returns (uint32) {
+        return polls[recipeId].rejectVotes;
+    }
+
+    function getPollClosed(uint256 recipeId) external view returns (bool) {
+        return polls[recipeId].closed;
+    }
+
+    function getPollApproved(uint256 recipeId) external view returns (bool) {
+        return polls[recipeId].approved;
+    }
+
+    function didVote(uint256 recipeId, address account) external view returns (bool) {
+        return hasVoted[recipeId][account];
+    }
+
+    function recipeExists(uint256 recipeId) external view returns (bool) {
+        return recipes[recipeId].recipeId != 0;
+    }
+
+    function getController() external view returns (address) { return CONTROLLER; }
+    function getModerator() external view returns (address) { return MODERATOR; }
+    function getPipeline() external view returns (address) { return PIPELINE; }
+    function getFeeRecipient() external view returns (address) { return FEE_RECIPIENT; }
+    function getLaunchTs() external view returns (uint256) { return LAUNCH_TS; }
