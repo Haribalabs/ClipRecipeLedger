@@ -728,3 +728,76 @@ contract ClipRecipeLedger {
             if (recipes[ids[i]].status == RecipeStatus.Draft) count++;
         }
     }
+
+    function aggregateLiveCountByAuthor(address author) external view returns (uint256 count) {
+        uint256[] storage ids = _authoredIds[author];
+        for (uint256 i = 0; i < ids.length; i++) {
+            if (recipes[ids[i]].status == RecipeStatus.Live) count++;
+        }
+    }
+
+    function aggregateInPollCountByAuthor(address author) external view returns (uint256 count) {
+        uint256[] storage ids = _authoredIds[author];
+        for (uint256 i = 0; i < ids.length; i++) {
+            if (recipes[ids[i]].status == RecipeStatus.InPoll) count++;
+        }
+    }
+
+    function aggregateRetiredCountByAuthor(address author) external view returns (uint256 count) {
+        uint256[] storage ids = _authoredIds[author];
+        for (uint256 i = 0; i < ids.length; i++) {
+            if (recipes[ids[i]].status == RecipeStatus.Retired) count++;
+        }
+    }
+
+    function getRecipeDataStruct(uint256 recipeId) external view returns (RecipeData memory) {
+        if (recipes[recipeId].recipeId == 0) revert CRL_NotFound();
+        return recipes[recipeId];
+    }
+
+    function getPollDataStruct(uint256 recipeId) external view returns (PollData memory) {
+        return polls[recipeId];
+    }
+
+    function minChuckle() external pure returns (uint256) { return MIN_CHUCKLE; }
+    function maxChuckle() external pure returns (uint256) { return MAX_CHUCKLE; }
+
+    struct BulkResult {
+        RecipeSummary[] items;
+        uint256 nextOffset;
+        bool hasMore;
+    }
+
+    function getBulkSummaries(uint256 offset, uint256 limit) external view returns (BulkResult memory) {
+        if (limit > MAX_BULK) limit = MAX_BULK;
+        uint256 total = recipeCounter;
+        if (offset >= total) {
+            return BulkResult({ items: new RecipeSummary[](0), nextOffset: offset, hasMore: false });
+        }
+        uint256 end = offset + limit;
+        if (end > total) end = total;
+        uint256 len = end - offset;
+        RecipeSummary[] memory arr = new RecipeSummary[](len);
+        for (uint256 i = 0; i < len; i++) {
+            uint256 id = offset + i + 1;
+            RecipeData storage r = recipes[id];
+            arr[i] = RecipeSummary({
+                recipeId: r.recipeId,
+                author: r.author,
+                title: r.title,
+                durationSec: r.durationSec,
+                chuckleLevel: r.chuckleLevel,
+                status: r.status,
+                createdTs: r.createdTs
+            });
+        }
+        return BulkResult({ items: arr, nextOffset: end, hasMore: end < total });
+    }
+
+    function getPackHashesBatch(uint256 recipeId, uint256[] calldata indices) external view returns (bytes32[] memory out) {
+        if (recipes[recipeId].recipeId == 0) revert CRL_NotFound();
+        bytes32[] storage arr = _packHashes[recipeId];
+        out = new bytes32[](indices.length);
+        for (uint256 i = 0; i < indices.length; i++) {
+            if (indices[i] < arr.length) out[i] = arr[indices[i]];
+        }
