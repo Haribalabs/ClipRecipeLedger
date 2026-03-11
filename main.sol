@@ -1312,3 +1312,76 @@ contract ClipRecipeLedger {
     function getConfigAsTuple() external pure returns (uint256, uint256, uint256, uint256, uint256, uint256, uint256) {
         return (MAX_PACK_ENTRIES, MAX_DURATION_SEC, MAX_TITLE_LEN, MAX_RECIPES_CAP, MAX_COLLABORATORS, POLL_DURATION, QUORUM_BP);
     }
+
+    function getNamespaceAndTags() external pure returns (bytes32 ns, bytes32 seed, bytes32 build) {
+        return (APP_NAMESPACE, SEED_MAGIC, BUILD_TAG);
+    }
+
+    function infoString() external pure returns (string memory) {
+        return "ClipRecipeLedger 0x_GenV_99";
+    }
+
+    function infoBytes() external pure returns (bytes32) {
+        return keccak256("ClipRecipeLedger.0x_GenV_99.info");
+    }
+
+    function validateRecipeIdRange(uint256 recipeId) external view returns (bool) {
+        return recipeId >= 1 && recipeId <= recipeCounter && recipes[recipeId].recipeId != 0;
+    }
+
+    function getRecipeRecord(uint256 recipeId) external view returns (RecipeData memory) {
+        if (recipes[recipeId].recipeId == 0) revert CRL_NotFound();
+        return recipes[recipeId];
+    }
+
+    function getPollRecord(uint256 recipeId) external view returns (PollData memory) {
+        return polls[recipeId];
+    }
+
+    function getSummaryRecord(uint256 recipeId) external view returns (RecipeSummary memory) {
+        if (recipes[recipeId].recipeId == 0) revert CRL_NotFound();
+        RecipeData storage r = recipes[recipeId];
+        return RecipeSummary({
+            recipeId: r.recipeId,
+            author: r.author,
+            title: r.title,
+            durationSec: r.durationSec,
+            chuckleLevel: r.chuckleLevel,
+            status: r.status,
+            createdTs: r.createdTs
+        });
+    }
+
+    function packAt(uint256 recipeId, uint256 index) external view returns (bytes32) {
+        bytes32[] storage arr = _packHashes[recipeId];
+        if (index >= arr.length) revert CRL_InvalidInput();
+        return arr[index];
+    }
+
+    function collabAt(uint256 recipeId, uint256 index) external view returns (address) {
+        address[] storage arr = _collabList[recipeId];
+        if (index >= arr.length) revert CRL_InvalidInput();
+        return arr[index];
+    }
+
+    function recipeIdRange() external view returns (uint256 minId, uint256 maxId) {
+        minId = 1;
+        maxId = recipeCounter;
+    }
+
+    function nextRecipeId() external view returns (uint256) {
+        return recipeCounter + 1;
+    }
+
+    function capExceededWith(uint256 extra) external view returns (bool) {
+        return recipeCounter + extra > MAX_RECIPES_CAP;
+    }
+
+    function slotsRemaining() external view returns (uint256) {
+        if (recipeCounter >= MAX_RECIPES_CAP) return 0;
+        return MAX_RECIPES_CAP - recipeCounter;
+    }
+
+    function bpsDenom() external pure returns (uint256) { return BPS; }
+    function quorumThresholdBp() external pure returns (uint256) { return QUORUM_BP; }
+    function pollDurationSeconds() external pure returns (uint256) { return POLL_DURATION; }
