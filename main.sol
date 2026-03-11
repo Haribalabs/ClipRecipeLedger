@@ -1239,3 +1239,76 @@ contract ClipRecipeLedger {
                 createdTs: r.createdTs
             });
         }
+    }
+
+    function countDraft() external view returns (uint256) { return countByStatus(RecipeStatus.Draft); }
+    function countLive() external view returns (uint256) { return countByStatus(RecipeStatus.Live); }
+    function countInPoll() external view returns (uint256) { return countByStatus(RecipeStatus.InPoll); }
+    function countRetired() external view returns (uint256) { return countByStatus(RecipeStatus.Retired); }
+
+    function getFirstRecipeId() external pure returns (uint256) { return 1; }
+    function getMaxRecipeId() external view returns (uint256) { return recipeCounter; }
+
+    function hasOpenPoll(uint256 recipeId) external view returns (bool) {
+        return recipes[recipeId].status == RecipeStatus.InPoll && polls[recipeId].openedTs != 0 && !polls[recipeId].closed;
+    }
+
+    function pollEndTimestamp(uint256 recipeId) external view returns (uint256) {
+        PollData storage p = polls[recipeId];
+        if (p.openedTs == 0) return 0;
+        return uint256(p.openedTs) + POLL_DURATION;
+    }
+
+    function isAuthor(uint256 recipeId, address account) external view returns (bool) {
+        return recipes[recipeId].author == account;
+    }
+
+    function canEditRecipe(uint256 recipeId, address account) external view returns (bool) {
+        RecipeData storage r = recipes[recipeId];
+        if (r.recipeId == 0 || r.status == RecipeStatus.Retired) return false;
+        return account == r.author || account == PIPELINE;
+    }
+
+    function canSetStatus(uint256 recipeId, address account) external view returns (bool) {
+        RecipeData storage r = recipes[recipeId];
+        if (r.recipeId == 0) return false;
+        return account == CONTROLLER || account == MODERATOR || account == r.author;
+    }
+
+    function totalPackEntriesGlobal() external view returns (uint256 total) {
+        for (uint256 id = 1; id <= recipeCounter; id++) {
+            total += _packHashes[id].length;
+        }
+    }
+
+    function totalCollaboratorsGlobal() external view returns (uint256 total) {
+        for (uint256 id = 1; id <= recipeCounter; id++) {
+            total += _collabList[id].length;
+        }
+    }
+
+    function recipeWithLongestDuration() external view returns (uint256 recipeId, uint32 duration) {
+        for (uint256 id = 1; id <= recipeCounter; id++) {
+            uint32 d = recipes[id].durationSec;
+            if (d > duration) {
+                duration = d;
+                recipeId = id;
+            }
+        }
+    }
+
+    function recipeWithHighestChuckle(uint256 fromId, uint256 limit) external view returns (uint256 recipeId, uint32 level) {
+        uint256 end = fromId + limit;
+        if (end > recipeCounter) end = recipeCounter + 1;
+        for (uint256 id = fromId == 0 ? 1 : fromId; id < end; id++) {
+            uint32 c = recipes[id].chuckleLevel;
+            if (c > level) {
+                level = c;
+                recipeId = id;
+            }
+        }
+    }
+
+    function getConfigAsTuple() external pure returns (uint256, uint256, uint256, uint256, uint256, uint256, uint256) {
+        return (MAX_PACK_ENTRIES, MAX_DURATION_SEC, MAX_TITLE_LEN, MAX_RECIPES_CAP, MAX_COLLABORATORS, POLL_DURATION, QUORUM_BP);
+    }
