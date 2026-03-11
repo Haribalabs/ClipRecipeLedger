@@ -1093,3 +1093,76 @@ contract ClipRecipeLedger {
     function canCreateRecipe() external view returns (bool) {
         return !stopped && recipeCounter < MAX_RECIPES_CAP;
     }
+
+    function canVote(uint256 recipeId, address account) external view returns (bool) {
+        if (recipes[recipeId].status != RecipeStatus.InPoll) return false;
+        if (polls[recipeId].closed || polls[recipeId].openedTs == 0) return false;
+        return !hasVoted[recipeId][account];
+    }
+
+    function canClosePoll(uint256 recipeId) external view returns (bool) {
+        PollData storage p = polls[recipeId];
+        if (p.closed || p.openedTs == 0) return false;
+        return block.timestamp >= uint256(p.openedTs) + POLL_DURATION;
+    }
+
+    function timeUntilPollClosable(uint256 recipeId) external view returns (uint256) {
+        PollData storage p = polls[recipeId];
+        if (p.closed || p.openedTs == 0) return 0;
+        uint256 endTs = uint256(p.openedTs) + POLL_DURATION;
+        if (block.timestamp >= endTs) return 0;
+        return endTs - block.timestamp;
+    }
+
+    function approveVotesFor(uint256 recipeId) external view returns (uint32) {
+        return polls[recipeId].approveVotes;
+    }
+
+    function rejectVotesFor(uint256 recipeId) external view returns (uint32) {
+        return polls[recipeId].rejectVotes;
+    }
+
+    function pollOpenedAt(uint256 recipeId) external view returns (uint64) {
+        return polls[recipeId].openedTs;
+    }
+
+    function recipeAuthorOf(uint256 recipeId) external view returns (address) {
+        return recipes[recipeId].author;
+    }
+
+    function recipeTitleOf(uint256 recipeId) external view returns (string memory) {
+        return recipes[recipeId].title;
+    }
+
+    function recipePackHashOf(uint256 recipeId) external view returns (bytes32) {
+        return recipes[recipeId].packHash;
+    }
+
+    function recipeTimelineHashOf(uint256 recipeId) external view returns (bytes32) {
+        return recipes[recipeId].timelineHash;
+    }
+
+    function recipeDurationOf(uint256 recipeId) external view returns (uint32) {
+        return recipes[recipeId].durationSec;
+    }
+
+    function recipeChuckleOf(uint256 recipeId) external view returns (uint32) {
+        return recipes[recipeId].chuckleLevel;
+    }
+
+    function recipeMixSeedOf(uint256 recipeId) external view returns (uint32) {
+        return recipes[recipeId].mixSeed;
+    }
+
+    function recipeCreatedAt(uint256 recipeId) external view returns (uint64) {
+        return recipes[recipeId].createdTs;
+    }
+
+    function recipeModifiedAt(uint256 recipeId) external view returns (uint64) {
+        return recipes[recipeId].modifiedTs;
+    }
+
+    function recipeStatusOf(uint256 recipeId) external view returns (RecipeStatus) {
+        return recipes[recipeId].status;
+    }
+
