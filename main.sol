@@ -1166,3 +1166,76 @@ contract ClipRecipeLedger {
         return recipes[recipeId].status;
     }
 
+    function authoredBy(address author) external view returns (uint256[] memory) {
+        return _authoredIds[author];
+    }
+
+    function packHashesOf(uint256 recipeId) external view returns (bytes32[] memory) {
+        return _packHashes[recipeId];
+    }
+
+    function collaboratorsOf(uint256 recipeId) external view returns (address[] memory) {
+        return _collabList[recipeId];
+    }
+
+    function pollOf(uint256 recipeId) external view returns (PollData memory) {
+        return polls[recipeId];
+    }
+
+    function voted(uint256 recipeId, address account) external view returns (bool) {
+        return hasVoted[recipeId][account];
+    }
+
+    function exists(uint256 recipeId) external view returns (bool) {
+        return recipes[recipeId].recipeId != 0;
+    }
+
+    function stoppedState() external view returns (bool) {
+        return stopped;
+    }
+
+    function controllerAddr() external view returns (address) { return CONTROLLER; }
+    function moderatorAddr() external view returns (address) { return MODERATOR; }
+    function pipelineAddr() external view returns (address) { return PIPELINE; }
+    function feeRecipientAddr() external view returns (address) { return FEE_RECIPIENT; }
+
+    uint256 public constant EXTRA_CONST_A = 42;
+    uint256 public constant EXTRA_CONST_B = 1337;
+    bytes32 public constant EXTRA_HASH = keccak256("ClipRecipeLedger.extra.0x_GenV_99");
+
+    function extraConstA() external pure returns (uint256) { return EXTRA_CONST_A; }
+    function extraConstB() external pure returns (uint256) { return EXTRA_CONST_B; }
+    function extraHash() external pure returns (bytes32) { return EXTRA_HASH; }
+
+    function getRecipeIdsPaginated(uint256 page, uint256 pageSize) external view returns (uint256[] memory ids) {
+        if (pageSize > MAX_BULK) pageSize = MAX_BULK;
+        uint256 start = page * pageSize + 1;
+        if (start > recipeCounter) return new uint256[](0);
+        uint256 end = start + pageSize;
+        if (end > recipeCounter + 1) end = recipeCounter + 1;
+        uint256 len = end - start;
+        ids = new uint256[](len);
+        for (uint256 i = 0; i < len; i++) ids[i] = start + i;
+    }
+
+    function getRecipeSummariesPaginated(uint256 page, uint256 pageSize) external view returns (RecipeSummary[] memory result) {
+        if (pageSize > MAX_BULK) pageSize = MAX_BULK;
+        uint256 start = page * pageSize + 1;
+        if (start > recipeCounter) return new RecipeSummary[](0);
+        uint256 end = start + pageSize;
+        if (end > recipeCounter + 1) end = recipeCounter + 1;
+        uint256 len = end - start;
+        result = new RecipeSummary[](len);
+        for (uint256 i = 0; i < len; i++) {
+            uint256 id = start + i;
+            RecipeData storage r = recipes[id];
+            result[i] = RecipeSummary({
+                recipeId: r.recipeId,
+                author: r.author,
+                title: r.title,
+                durationSec: r.durationSec,
+                chuckleLevel: r.chuckleLevel,
+                status: r.status,
+                createdTs: r.createdTs
+            });
+        }
