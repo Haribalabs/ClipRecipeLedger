@@ -1385,3 +1385,64 @@ contract ClipRecipeLedger {
     function bpsDenom() external pure returns (uint256) { return BPS; }
     function quorumThresholdBp() external pure returns (uint256) { return QUORUM_BP; }
     function pollDurationSeconds() external pure returns (uint256) { return POLL_DURATION; }
+    function maxPackSize() external pure returns (uint256) { return MAX_PACK_ENTRIES; }
+    function maxDuration() external pure returns (uint256) { return MAX_DURATION_SEC; }
+    function maxTitleLength() external pure returns (uint256) { return MAX_TITLE_LEN; }
+    function maxRecipes() external pure returns (uint256) { return MAX_RECIPES_CAP; }
+    function maxCollab() external pure returns (uint256) { return MAX_COLLABORATORS; }
+    function appDomain() external pure returns (bytes32) { return APP_NAMESPACE; }
+    function magicSeed() external pure returns (bytes32) { return SEED_MAGIC; }
+    function build() external pure returns (bytes32) { return BUILD_TAG; }
+    function running() external view returns (bool) { return !stopped; }
+    function halted() external view returns (bool) { return stopped; }
+    function totalRecipes() external view returns (uint256) { return recipeCounter; }
+    function deployTime() external view returns (uint256) { return LAUNCH_TS; }
+
+    function getRecipeIdsForAuthor(address author, uint256 offset, uint256 limit) external view returns (uint256[] memory) {
+        return getAuthorRecipesPaginated(author, offset, limit);
+    }
+
+    function getRecipeCountForAuthor(address author) external view returns (uint256) {
+        return getAuthorRecipeCount(author);
+    }
+
+    function getPackForRecipe(uint256 recipeId) external view returns (bytes32[] memory) {
+        return getPackHashes(recipeId);
+    }
+
+    function getCollabsForRecipe(uint256 recipeId) external view returns (address[] memory) {
+        return getCollaborators(recipeId);
+    }
+
+    function getPollForRecipe(uint256 recipeId) external view returns (PollData memory) {
+        return getPoll(recipeId);
+    }
+
+    function getRecipeSummaryById(uint256 recipeId) external view returns (RecipeSummary memory) {
+        return getRecipeSummary(recipeId);
+    }
+
+    function getRecipeById(uint256 recipeId) external view returns (RecipeData memory) {
+        return getRecipe(recipeId);
+    }
+
+    function getConfigValues() external pure returns (uint256[8] memory vals) {
+        vals[0] = MAX_PACK_ENTRIES;
+        vals[1] = MAX_DURATION_SEC;
+        vals[2] = MAX_TITLE_LEN;
+        vals[3] = MAX_RECIPES_CAP;
+        vals[4] = MAX_COLLABORATORS;
+        vals[5] = POLL_DURATION;
+        vals[6] = QUORUM_BP;
+        vals[7] = BPS;
+    }
+
+    function getRoleAddresses() external view returns (address[4] memory addrs) {
+        addrs[0] = CONTROLLER;
+        addrs[1] = MODERATOR;
+        addrs[2] = PIPELINE;
+        addrs[3] = FEE_RECIPIENT;
+    }
+
+    receive() external payable {}
+}
